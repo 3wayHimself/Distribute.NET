@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.IO;
 using Lidgren.Network;
+using Mond;
 
 namespace Slave
 {
@@ -13,6 +14,7 @@ namespace Slave
     {
         static NetServer server;
         static string name;
+        static MondState mondState;
 
         public static void Main(string[] args)
         {
@@ -27,7 +29,9 @@ namespace Slave
 
             name = File.ReadAllText("slavename.txt");
 
-            Console.WriteLine("Distribute.NET Slave - 1.0");
+            mondState = new MondState();
+
+            Console.WriteLine("Distribute.NET Slave - 1.0: {0}", name);
 
             NetPeerConfiguration cfg = new NetPeerConfiguration("Distribute.NET");
             cfg.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
@@ -70,6 +74,7 @@ namespace Slave
         {
             NetPeer peer = (NetPeer)peerObj;
             NetIncomingMessage inc = peer.ReadMessage();
+            NetOutgoingMessage outMsg;
 
             switch (inc.MessageType)
             {
@@ -86,13 +91,28 @@ namespace Slave
                     break;
 
                 case NetIncomingMessageType.Data:
-                    Console.WriteLine("Incoming message from {0}: {1}", inc.SenderEndPoint.ToString(), inc.ReadString());
+                    Console.WriteLine("Message received");
+                    string command = inc.ReadString();
+
+                    if (command == "prgm")
+                    {
+                        string prgm = inc.ReadString();
+                        Console.WriteLine("Program received; running: {0}", prgm);
+                        string result = mondState.Run(prgm).Serialize();
+                        Console.WriteLine("Done. Result: {0}", result);
+
+                        outMsg = server.CreateMessage();
+                        outMsg.Write("result");
+                        outMsg.Write(result);
+                        server.SendMessage(outMsg, inc.SenderConnection, NetDeliveryMethod.ReliableOrdered);
+                    }
+
                     break;
 
                 case NetIncomingMessageType.DiscoveryRequest:
                     Console.WriteLine("Discovery request from {0}", inc.SenderEndPoint.ToString());
 
-                    NetOutgoingMessage outMsg = server.CreateMessage();
+                    outMsg = server.CreateMessage();
                     outMsg.Write("slave " + name);
                     server.SendDiscoveryResponse(outMsg, inc.SenderEndPoint);
 

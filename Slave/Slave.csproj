@@ -37,6 +37,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Command.cs" />
@@ -46,13 +47,16 @@
     <Reference Include="Lidgren.Network">
       <HintPath>..\..\..\lidgren\Lidgren.Network\bin\Debug\Lidgren.Network.dll</HintPath>
     </Reference>
+    <Reference Include="Mond">
+      <HintPath>..\packages\Mond.0.1.2-pre\lib\net45\Mond.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>@echo off
 @echo slave1&gt;slavename.txt
-pscp -pw raspberry $(TargetFileName) Lidgren.Network.dll slavename.txt pi@192.168.1.169:$(ProjectName)</PostBuildEvent>
+pscp -pw raspberry $(TargetFileName) Lidgren.Network.dll Mond.dll slavename.txt pi@192.168.1.169:$(ProjectName)</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -6,20 +6,22 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.IO;
 using Lidgren.Network;
+using Newtonsoft.Json;
 
 namespace Master
 {
     class Program
     {
         static NetServer server;
-
         static List<Slave> slaves;
+        static List<string> queue;
 
         public static void Main(string[] args)
         {
             bool running = true;
 
             slaves = new List<Slave>();
+            queue = new List<string>();
 
             Console.WriteLine("Distribute.NET Master - 1.0");
 
@@ -32,6 +34,7 @@ namespace Master
             server.Start();
             Console.WriteLine("Server started and listening");
 
+            #region Commands
             Command.Register("close", new Action<string[]>(a => running = false));
             Command.Register("conns", new Action<string[]>(a =>
             {
@@ -74,6 +77,68 @@ namespace Master
                 slaves[index].Connection.Disconnect("bye");
                 slaves.RemoveAt(index);
             }));
+            Command.Register("prgm", new Action<string[]>(a =>
+            {
+                if (a.Length < 2)
+                    return;
+
+                int index;
+                if (!Int32.TryParse(a[0], out index))
+                    return;
+
+                string prgm = String.Join(" ", a.Skip(1));
+                Console.WriteLine(prgm);
+                NetOutgoingMessage msg = server.CreateMessage();
+                msg.Write("prgm");
+                msg.Write(prgm);
+                server.SendMessage(msg, slaves[index].Connection, NetDeliveryMethod.ReliableOrdered);
+
+            }));
+            Command.Register("pack", new Action<string[]>(a =>
+            {
+                if (a.Length < 2)
+                    return;
+
+                string command = a[0];
+
+                if (command == "create")
+                {
+                    if (a.Length < 4)
+                        return;
+
+                    string packName = a[1];
+
+                    Pack pack = new Pack();
+                    pack.Name = packName;
+
+                    foreach (var prgm in a.Skip(2))
+                    {
+                        if (File.Exists(prgm))
+                            pack.Programs.Add(prgm);
+                    }
+
+                    File.WriteAllText(packName + ".pack", pack.Serialize());
+
+                    Console.WriteLine("Pack created: {0}.pack", packName);
+                }
+                else if (command == "run")
+                {
+                    string packName = a[1];
+
+                    if (!File.Exists(packName))
+                        return;
+
+                    Pack pack = JsonConvert.DeserializeObject<Pack>(File.ReadAllText(packName));
+
+                    Console.WriteLine("Running pack: {0}", pack.Name);
+
+                    queue.AddRange(pack.Programs.Select(p => File.ReadAllText(p)));
+                    CheckQueue();
+                }
+            }));
+            #endregion
+
+            DiscoverSlaves(false);
 
             string line;
             while (running)
@@ -110,7 +175,18 @@ namespace Master
                     break;
 
                 case NetIncomingMessageType.Data:
-                    Console.WriteLine("Incoming message from {0}: {1}", inc.SenderEndPoint.ToString(), inc.ReadString());
+                    Console.WriteLine("Message received");
+                    string data = inc.ReadString();
+
+                    if (data == "result")
+                    {
+                        slaves.Find(s => s.Connection.RemoteEndPoint == inc.SenderEndPoint).Status = SlaveStatus.Idle;
+
+                        string result = inc.ReadString();
+                        Console.WriteLine(result);
+
+                        CheckQueue();
+                    }
                     break;
 
                 case NetIncomingMessageType.DiscoveryRequest:
@@ -139,7 +215,7 @@ namespace Master
 
                         NetConnection connection = server.Connect(inc.SenderEndPoint); 
 
-                        Slave slave = new Slave(connection, name);
+                        Slave slave = new Slave(connection, name, server);
                         slaves.Add(slave);
                         Console.WriteLine("Slave registered: {0}, {1}", inc.SenderEndPoint, name);
                     }
@@ -154,6 +230,26 @@ namespace Master
                 slaves.Clear();
 
             server.DiscoverLocalPeers(6969);
+        }
+
+        static void CheckQueue()
+        {
+            if (queue.Count < 1)
+                return;
+
+            List<Slave> idleSlaves = slaves.Where(s => s.Status == SlaveStatus.Idle).ToList();
+            int count = idleSlaves.Count;
+            if (count < 1)
+                return;
+
+            while (count > 0)
+            {
+                idleSlaves[0].SendProgram(queue[0]);
+                idleSlaves.RemoveAt(0);
+                queue.RemoveAt(0);
+
+                count -= 1;
+            }
         }
     }
 }
