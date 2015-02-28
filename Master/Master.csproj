@@ -33,7 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Master.Program</StartupObject>
+    <StartupObject>Master.Master</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -52,7 +52,7 @@
   <ItemGroup>
     <Compile Include="Command.cs" />
     <Compile Include="Pack.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="Master.cs" />
     <Compile Include="Slave.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

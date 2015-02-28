@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace Master
 {
-    class Program
+    class Master
     {
         static NetServer server;
         static List<Slave> slaves;
@@ -175,7 +175,7 @@ namespace Master
                     break;
 
                 case NetIncomingMessageType.Data:
-                    Console.WriteLine("Message received");
+                    //Console.WriteLine("Message received");
                     string data = inc.ReadString();
 
                     if (data == "result")
@@ -183,7 +183,7 @@ namespace Master
                         slaves.Find(s => s.Connection.RemoteEndPoint == inc.SenderEndPoint).Status = SlaveStatus.Idle;
 
                         string result = inc.ReadString();
-                        Console.WriteLine(result);
+                        Console.WriteLine("Result from {0}: {1}", inc.SenderEndPoint, result);
 
                         CheckQueue();
                     }
@@ -235,7 +235,10 @@ namespace Master
         static void CheckQueue()
         {
             if (queue.Count < 1)
+            {
+                Console.WriteLine("Queue empty");
                 return;
+            }
 
             List<Slave> idleSlaves = slaves.Where(s => s.Status == SlaveStatus.Idle).ToList();
             int count = idleSlaves.Count;
@@ -244,6 +247,7 @@ namespace Master
 
             while (count > 0)
             {
+                Console.WriteLine("Sending program to idle slave: {0} ({1})", idleSlaves[0].Name, idleSlaves[0].Connection.RemoteEndPoint);
                 idleSlaves[0].SendProgram(queue[0]);
                 idleSlaves.RemoveAt(0);
                 queue.RemoveAt(0);

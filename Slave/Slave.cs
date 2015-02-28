@@ -10,7 +10,7 @@ using Mond;
 
 namespace Slave
 {
-    class Program
+    class Slave
     {
         static NetServer server;
         static string name;
@@ -46,7 +46,7 @@ namespace Slave
             Command.Register("close", new Action<string[]>((a) => running = false));
             Command.Register("conns", new Action<string[]>((a) =>
             {
-                int index = 1;
+                int index = 0;
                 foreach (var connection in server.Connections)
                 {
                     Console.WriteLine("{0}\t{1}\t{2}", index, connection.RemoteEndPoint.ToString(), connection.AverageRoundtripTime);
@@ -91,7 +91,7 @@ namespace Slave
                     break;
 
                 case NetIncomingMessageType.Data:
-                    Console.WriteLine("Message received");
+                    //Console.WriteLine("Message received");
                     string command = inc.ReadString();
 
                     if (command == "prgm")

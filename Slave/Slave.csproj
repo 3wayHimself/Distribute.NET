@@ -41,7 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Command.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="Slave.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Lidgren.Network">
