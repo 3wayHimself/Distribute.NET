@@ -12,10 +12,20 @@ namespace Slave
     class Program
     {
         static NetServer server;
+        static string name;
 
         public static void Main(string[] args)
         {
             bool running = true;
+
+            if (!File.Exists("slavename.txt"))
+            {
+                Console.WriteLine("slavename.txt not found");
+                Console.ReadKey();
+                return;
+            }
+
+            name = File.ReadAllText("slavename.txt");
 
             Console.WriteLine("Distribute.NET Slave - 1.0");
 
@@ -83,7 +93,7 @@ namespace Slave
                     Console.WriteLine("Discovery request from {0}", inc.SenderEndPoint.ToString());
 
                     NetOutgoingMessage outMsg = server.CreateMessage();
-                    outMsg.Write("slave");
+                    outMsg.Write("slave " + name);
                     server.SendDiscoveryResponse(outMsg, inc.SenderEndPoint);
 
                     break;

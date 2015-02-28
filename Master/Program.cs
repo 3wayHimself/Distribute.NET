@@ -32,8 +32,8 @@ namespace Master
             server.Start();
             Console.WriteLine("Server started and listening");
 
-            Command.Register("close", new Action<string[]>((a) => running = false));
-            Command.Register("conns", new Action<string[]>((a) =>
+            Command.Register("close", new Action<string[]>(a => running = false));
+            Command.Register("conns", new Action<string[]>(a =>
             {
                 int index = 1;
                 foreach (var connection in server.Connections)
@@ -42,8 +42,8 @@ namespace Master
                     index += 1;
                 }
             }));
-            Command.Register("discover", new Action<string[]>((a) => DiscoverSlaves(a.Length > 0 && a[0] == "clr")));
-            Command.Register("broadcast", new Action<string[]>((a) =>
+            Command.Register("discover", new Action<string[]>(a => DiscoverSlaves(a.Length > 0 && a[0] == "clr")));
+            Command.Register("broadcast", new Action<string[]>(a =>
             {
                 if (a.Length < 0)
                     return;
@@ -53,6 +53,26 @@ namespace Master
                 outMsg.Write(msg);
                 List<NetConnection> slaveConnections = slaves.Select(s => s.Connection).ToList();
                 server.SendMessage(outMsg, slaveConnections, NetDeliveryMethod.ReliableOrdered, 0);
+            }));
+            Command.Register("slaves", new Action<string[]>(a =>
+            {
+                int index = 0;
+                foreach (var slave in slaves)
+                {
+                    Console.WriteLine("{0}\t{1}\t{2}", index, slave.Connection.RemoteEndPoint, slave.Name);
+                }
+            }));
+            Command.Register("disconnect", new Action<string[]>(a =>
+            {
+                if (a.Length < 1)
+                    return;
+
+                int index;
+                if (!Int32.TryParse(a[0], out index))
+                    return;
+
+                slaves[index].Connection.Disconnect("bye");
+                slaves.RemoveAt(index);
             }));
 
             string line;
@@ -103,11 +123,14 @@ namespace Master
                     break;
 
                 case NetIncomingMessageType.DiscoveryResponse:
-                    string name = inc.ReadString();
+                    string str = inc.ReadString();
                     //Console.WriteLine("Response: {0}: {1}", inc.SenderEndPoint.ToString(), name);
 
-                    if (name == "slave")
+                    string[] nameArgs = str.Split(' ');
+
+                    if (nameArgs[0] == "slave")
                     {
+                        string name = nameArgs[1];
                         if (slaves.Count(s => s.Connection.RemoteEndPoint == inc.SenderEndPoint && s.Name == name) > 0)
                         {
                             Console.WriteLine("Slave already registered: {0}, {1}", inc.SenderEndPoint, name);
