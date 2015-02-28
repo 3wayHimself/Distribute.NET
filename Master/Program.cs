@@ -11,23 +11,13 @@ namespace Master
 {
     class Program
     {
-        static Version version;
-
         static NetServer server;
 
         public static void Main(string[] args)
         {
             bool running = true;
 
-            if (!File.Exists("version.txt"))
-            {
-                Console.WriteLine("Missing version.txt, assuming default");
-                version = new Version(0, 1, 0);
-            }
-            else
-                version = new Version(File.ReadAllText("version.txt"));
-
-            Console.WriteLine("Distribute.NET Master - " + version.ToString());
+            Console.WriteLine("Distribute.NET Master - 1.0");
 
             NetPeerConfiguration cfg = new NetPeerConfiguration("Distribute.NET");
             cfg.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
@@ -53,7 +43,6 @@ namespace Master
             string line;
             while (running)
             {
-                Console.Write("> ");
                 line = Console.ReadLine();
 
                 string[] lineArgs = line.Split(' ');
@@ -94,7 +83,7 @@ namespace Master
 
                     NetOutgoingMessage outMsg = server.CreateMessage();
                     outMsg.Write("master");
-                    server.SendMessage(outMsg, inc.SenderConnection, NetDeliveryMethod.ReliableOrdered);
+                    server.SendDiscoveryResponse(outMsg, inc.SenderEndPoint);
 
                     break;
 
