@@ -13,9 +13,13 @@ namespace Master
     {
         static NetServer server;
 
+        static List<Slave> slaves;
+
         public static void Main(string[] args)
         {
             bool running = true;
+
+            slaves = new List<Slave>();
 
             Console.WriteLine("Distribute.NET Master - 1.0");
 
@@ -38,7 +42,18 @@ namespace Master
                     index += 1;
                 }
             }));
-            Command.Register("discover", new Action<string[]>((a) => server.DiscoverLocalPeers(6969)));
+            Command.Register("discover", new Action<string[]>((a) => DiscoverSlaves(a.Length > 0 && a[0] == "clr")));
+            Command.Register("broadcast", new Action<string[]>((a) =>
+            {
+                if (a.Length < 0)
+                    return;
+
+                string msg = a[0];
+                NetOutgoingMessage outMsg = server.CreateMessage(msg.Length);
+                outMsg.Write(msg);
+                List<NetConnection> slaveConnections = slaves.Select(s => s.Connection).ToList();
+                server.SendMessage(outMsg, slaveConnections, NetDeliveryMethod.ReliableOrdered, 0);
+            }));
 
             string line;
             while (running)
@@ -88,9 +103,34 @@ namespace Master
                     break;
 
                 case NetIncomingMessageType.DiscoveryResponse:
-                    Console.WriteLine("Found slave at {0}: {1}", inc.SenderEndPoint.ToString(), inc.ReadString());
+                    string name = inc.ReadString();
+                    //Console.WriteLine("Response: {0}: {1}", inc.SenderEndPoint.ToString(), name);
+
+                    if (name == "slave")
+                    {
+                        if (slaves.Count(s => s.Connection.RemoteEndPoint == inc.SenderEndPoint && s.Name == name) > 0)
+                        {
+                            Console.WriteLine("Slave already registered: {0}, {1}", inc.SenderEndPoint, name);
+                            break;
+                        }
+
+                        NetConnection connection = server.Connect(inc.SenderEndPoint); 
+
+                        Slave slave = new Slave(connection, name);
+                        slaves.Add(slave);
+                        Console.WriteLine("Slave registered: {0}, {1}", inc.SenderEndPoint, name);
+                    }
+
                     break;
             }
+        }
+
+        static void DiscoverSlaves(bool clear)
+        {
+            if (clear)
+                slaves.Clear();
+
+            server.DiscoverLocalPeers(6969);
         }
     }
 }

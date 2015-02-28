@@ -17,7 +17,7 @@ namespace Slave
         {
             bool running = true;
 
-            Console.WriteLine("Distribute.NET Slave - 1.1");
+            Console.WriteLine("Distribute.NET Slave - 1.0");
 
             NetPeerConfiguration cfg = new NetPeerConfiguration("Distribute.NET");
             cfg.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
