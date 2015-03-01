@@ -121,6 +121,10 @@ namespace Slave
                 case NetIncomingMessageType.DiscoveryResponse:
                     Console.WriteLine("Found master at {0}: {1}", inc.SenderEndPoint.ToString(), inc.ReadString());
                     break;
+
+                case NetIncomingMessageType.StatusChanged:
+                    Console.WriteLine("Status of {0}: {1}", inc.SenderEndPoint.ToString(), ((NetConnectionStatus)inc.ReadByte()).ToString());
+                    break;
             }
         }
     }
