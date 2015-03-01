@@ -201,8 +201,11 @@ namespace Master
                     if (data == "slave")
                     {
                         string slaveName = inc.ReadString();
+                        //Console.WriteLine(slaveName);
 
-                        Console.WriteLine(slaveName);
+                        Slave slave = new Slave(inc.SenderConnection, slaveName, server);
+                        slaves.Add(slave);
+                        Console.WriteLine("Slave registered: {0} ({1})", slaveName, inc.SenderEndPoint.ToString());
 
                         //inc.SenderConnection.Approve();
                     }
