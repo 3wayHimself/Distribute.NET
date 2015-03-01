@@ -94,20 +94,26 @@ namespace Master
                     if (a.Length < 4)
                         return;
 
-                    string packName = a[1];
+                    string prgmName = a[1];
 
-                    Program pack = new Program();
-                    pack.Name = packName;
-
-                    foreach (var prgm in a.Skip(2))
+                    if (File.Exists(prgmName + ".prgm"))
                     {
-                        if (File.Exists(prgm))
-                            pack.AddTask(prgm);
+                        Console.WriteLine("A program called \"{0}\" already exists");
+                        return;
                     }
 
-                    File.WriteAllText(packName + ".prgm", pack.Serialize());
+                    Program prgm = new Program();
+                    prgm.Name = prgmName;
 
-                    Console.WriteLine("Program created: {0}.prgm", packName);
+                    foreach (var task in a.Skip(2))
+                    {
+                        if (File.Exists(task))
+                            prgm.AddTask(task);
+                    }
+
+                    File.WriteAllText(prgmName + ".prgm", prgm.Serialize());
+
+                    Console.WriteLine("Program created: {0}.prgm", prgmName);
                 }
                 else if (command == "run")
                 {
