@@ -244,7 +244,7 @@ namespace Master
                 return;
             }
 
-            while (count > 0 || queue.Count == 0)
+            while (count > 0 || queue.Count > 0)
             {
                 Slave idle = idleSlaves[0];
                 Task task = queue[0];
