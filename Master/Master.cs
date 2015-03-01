@@ -305,7 +305,7 @@ namespace Master
                     continue;
                 }
 
-                Console.WriteLine("Sending task (#{0} in \"{1}\") to idle slave: {2} ({3})", task.Index(), task.ParentProgram.Name,
+                Console.WriteLine("Sending task #{0} in \"{1}\" to idle slave: {2} ({3})", task.Index(), task.ParentProgram.Name,
                     idle.Name, idle.Connection.RemoteEndPoint);
 
                 idle.SendTask(task);
