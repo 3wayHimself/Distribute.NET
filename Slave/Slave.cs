@@ -93,9 +93,31 @@ namespace Slave
 
                     if (command == "prgm")
                     {
+                        List<int> args = new List<int>();
+                        int argCount = inc.ReadInt32();
+
+                        if (argCount > 0)
+                            args.Add(inc.ReadInt32());
+
                         string prgm = inc.ReadString();
-                        Console.WriteLine("Program received; running: {0}", prgm);
-                        string result = mondState.Run(prgm).Serialize();
+
+                        Console.WriteLine("Program received. Args: ", argCount);
+
+                        MondValue func = mondState.Run(prgm);
+                        if (func.Type != MondValueType.Function)
+                        {
+                            Console.WriteLine("Invalid return type: {0} ({1})", func.Type, func.Serialize());
+
+                            outMsg = client.CreateMessage();
+                            outMsg.Write("error");
+                            outMsg.Write("wrong return type; expected function");
+                            client.SendMessage(outMsg, inc.SenderConnection, NetDeliveryMethod.ReliableOrdered);
+
+                            break;
+                        }
+
+                        string result = mondState.Call(func, args.Select(a => new MondValue(a)).ToArray());
+
                         Console.WriteLine("Done. Result: {0}", result);
 
                         outMsg = client.CreateMessage();

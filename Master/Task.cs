@@ -13,12 +13,16 @@ namespace Master
         public Program ParentProgram;
         public string CodePath;
         [JsonIgnore]
+        public List<int> Arguments; // TODO: support more than just int
+        [JsonIgnore]
         public Slave Assignee;
 
         public Task(Program parent, string code)
         {
             ParentProgram = parent;
             CodePath = code;
+
+            Arguments = new List<int>();
         }
 
         public int Index()

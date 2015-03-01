@@ -176,7 +176,14 @@ namespace Master
                         tasks.Remove(task);
 
                         string result = inc.ReadString();
-                        Console.WriteLine("Result for task #{0} in \"{1}\": {2}", task.Index(), task.ParentProgram.Name, result);
+                        
+                        if (result == "error")
+                        {
+                            string reason = inc.ReadString();
+                            Console.WriteLine("Task #{0} in \"{1}\" failed with reason: {2}", task.Index(), task.ParentProgram.Name, reason);
+                        }
+                        else
+                            Console.WriteLine("Result for task #{0} in \"{1}\": {2}", task.Index(), task.ParentProgram.Name, result);
 
                         CheckQueue();
                     }
