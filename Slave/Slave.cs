@@ -79,15 +79,10 @@ namespace Slave
             switch (inc.MessageType)
             {
                 case NetIncomingMessageType.DebugMessage:
-                    Console.WriteLine("Lidgren debug: {0}", inc.ReadString());
-                    break;
-
+                case NetIncomingMessageType.VerboseDebugMessage:
                 case NetIncomingMessageType.WarningMessage:
-                    Console.WriteLine("Lidgren warning: {0}", inc.ReadString());
-                    break;
-
                 case NetIncomingMessageType.ErrorMessage:
-                    Console.WriteLine("Lidgren error: {0}", inc.ReadString());
+                    Console.WriteLine("Lidgren: {0}", inc.ReadString());
                     break;
 
                 case NetIncomingMessageType.Data:
