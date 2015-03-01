@@ -104,14 +104,14 @@ namespace Slave
 
                     break;
 
-                case NetIncomingMessageType.DiscoveryRequest:
-                    Console.WriteLine("Discovery request from {0}", inc.SenderEndPoint.ToString());
+                //case NetIncomingMessageType.DiscoveryRequest:
+                //    Console.WriteLine("Discovery request from {0}", inc.SenderEndPoint.ToString());
 
-                    outMsg = client.CreateMessage("slave");
-                    outMsg.Write(name);
-                    client.SendDiscoveryResponse(outMsg, inc.SenderEndPoint);
+                //    outMsg = client.CreateMessage("slave");
+                //    outMsg.Write(name);
+                //    client.SendDiscoveryResponse(outMsg, inc.SenderEndPoint);
 
-                    break;
+                //    break;
 
                 case NetIncomingMessageType.DiscoveryResponse:
                     string peerName = inc.ReadString();
@@ -128,6 +128,11 @@ namespace Slave
 
                 case NetIncomingMessageType.StatusChanged:
                     Console.WriteLine("Status of {0}: {1}", inc.SenderEndPoint.ToString(), ((NetConnectionStatus)inc.ReadByte()).ToString());
+
+                    string addit = inc.ReadString();
+                    if (!String.IsNullOrEmpty(addit))
+                        Console.WriteLine(addit);
+
                     break;
             }
         }

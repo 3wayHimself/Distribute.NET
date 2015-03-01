@@ -31,6 +31,7 @@ namespace Master
 
             NetPeerConfiguration cfg = new NetPeerConfiguration("Distribute.NET");
             cfg.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
+            cfg.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
             cfg.Port = 6969;
 
             server = new NetServer(cfg);
@@ -147,6 +148,7 @@ namespace Master
             NetPeer peer = (NetPeer)peerObj;
             NetIncomingMessage inc = peer.ReadMessage();
 
+            string data;
             switch (inc.MessageType)
             {
                 case NetIncomingMessageType.DebugMessage:
@@ -158,7 +160,7 @@ namespace Master
 
                 case NetIncomingMessageType.Data:
                     //Console.WriteLine("Message received");
-                    string data = inc.ReadString();
+                    data = inc.ReadString();
                     Console.WriteLine(data);
 
                     if (data == "result")
@@ -172,11 +174,6 @@ namespace Master
 
                         CheckQueue();
                     }
-                    else if (data == "slave")
-                    {
-                        string slaveName = inc.ReadString();
-                        Console.WriteLine(slaveName);
-                    }
                     break;
 
                 case NetIncomingMessageType.DiscoveryRequest:
@@ -189,6 +186,25 @@ namespace Master
 
                 case NetIncomingMessageType.StatusChanged:
                     Console.WriteLine("Status of {0}: {1}", inc.SenderEndPoint.ToString(), ((NetConnectionStatus)inc.ReadByte()).ToString());
+                    break;
+
+                case NetIncomingMessageType.ConnectionApproval:
+                    Console.WriteLine("Connection approval: {0}", inc.SenderEndPoint);
+
+                    data = inc.ReadString();
+
+                    if (data == "slave")
+                    {
+                        string slaveName = inc.ReadString();
+
+                        Console.WriteLine(slaveName);
+
+                        //inc.SenderConnection.Approve();
+                    }
+                    else
+                        inc.SenderConnection.Deny("Not a slave");
+
+                    inc.SenderConnection.Approve();
                     break;
             }
         }
