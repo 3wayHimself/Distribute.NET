@@ -12,7 +12,7 @@ namespace Slave
 {
     class Slave
     {
-        static NetServer server;
+        static NetClient client;
         static string name;
         static MondState mondState;
 
@@ -37,9 +37,9 @@ namespace Slave
             cfg.EnableMessageType(NetIncomingMessageType.DiscoveryRequest);
             cfg.Port = 6969;
 
-            server = new NetServer(cfg);
-            server.RegisterReceivedCallback(new SendOrPostCallback(MessageReceived), new SynchronizationContext());
-            server.Start();
+            client = new NetClient(cfg);
+            client.RegisterReceivedCallback(new SendOrPostCallback(MessageReceived), new SynchronizationContext());
+            client.Start();
 
             Console.WriteLine("Server started");
 
@@ -47,13 +47,13 @@ namespace Slave
             Command.Register("conns", new Action<string[]>((a) =>
             {
                 int index = 0;
-                foreach (var connection in server.Connections)
+                foreach (var connection in client.Connections)
                 {
                     Console.WriteLine("{0}\t{1}\t{2}", index, connection.RemoteEndPoint.ToString(), connection.AverageRoundtripTime);
                     index += 1;
                 }
             }));
-            Command.Register("discover", new Action<string[]>((a) => server.DiscoverLocalPeers(6969)));
+            Command.Register("discover", new Action<string[]>((a) => client.DiscoverLocalPeers(6969)));
 
             string line;
             while (running)
@@ -67,7 +67,7 @@ namespace Slave
 
             Console.WriteLine("Closing...");
 
-            server.Shutdown("bye");
+            client.Shutdown("bye");
         }
 
         static void MessageReceived(object peerObj)
@@ -101,10 +101,10 @@ namespace Slave
                         string result = mondState.Run(prgm).Serialize();
                         Console.WriteLine("Done. Result: {0}", result);
 
-                        outMsg = server.CreateMessage();
+                        outMsg = client.CreateMessage();
                         outMsg.Write("result");
                         outMsg.Write(result);
-                        server.SendMessage(outMsg, inc.SenderConnection, NetDeliveryMethod.ReliableOrdered);
+                        client.SendMessage(outMsg, inc.SenderConnection, NetDeliveryMethod.ReliableOrdered);
                     }
 
                     break;
@@ -112,14 +112,23 @@ namespace Slave
                 case NetIncomingMessageType.DiscoveryRequest:
                     Console.WriteLine("Discovery request from {0}", inc.SenderEndPoint.ToString());
 
-                    outMsg = server.CreateMessage();
-                    outMsg.Write("slave " + name);
-                    server.SendDiscoveryResponse(outMsg, inc.SenderEndPoint);
+                    outMsg = client.CreateMessage("slave");
+                    outMsg.Write(name);
+                    client.SendDiscoveryResponse(outMsg, inc.SenderEndPoint);
 
                     break;
 
                 case NetIncomingMessageType.DiscoveryResponse:
-                    Console.WriteLine("Found master at {0}: {1}", inc.SenderEndPoint.ToString(), inc.ReadString());
+                    string peerName = inc.ReadString();
+
+                    if (peerName == "master")
+                    {
+                        Console.WriteLine("Found master at {0}", inc.SenderEndPoint);
+
+                        outMsg = client.CreateMessage("slave");
+                        outMsg.Write(name);
+                        client.Connect(inc.SenderEndPoint, outMsg);
+                    }
                     break;
 
                 case NetIncomingMessageType.StatusChanged:

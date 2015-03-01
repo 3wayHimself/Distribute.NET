@@ -125,7 +125,7 @@ namespace Master
             }));
             #endregion
 
-            DiscoverSlaves(false);
+            //DiscoverSlaves(false);
 
             string line;
             while (running)
@@ -164,6 +164,7 @@ namespace Master
                 case NetIncomingMessageType.Data:
                     //Console.WriteLine("Message received");
                     string data = inc.ReadString();
+                    Console.WriteLine(data);
 
                     if (data == "result")
                     {
@@ -176,38 +177,18 @@ namespace Master
 
                         CheckQueue();
                     }
+                    else if (data == "slave")
+                    {
+                        string slaveName = inc.ReadString();
+                        Console.WriteLine(slaveName);
+                    }
                     break;
 
                 case NetIncomingMessageType.DiscoveryRequest:
                     Console.WriteLine("Discovery request from {0}", inc.SenderEndPoint.ToString());
 
-                    NetOutgoingMessage outMsg = server.CreateMessage();
-                    outMsg.Write("master");
+                    NetOutgoingMessage outMsg = server.CreateMessage("master");
                     server.SendDiscoveryResponse(outMsg, inc.SenderEndPoint);
-
-                    break;
-
-                case NetIncomingMessageType.DiscoveryResponse:
-                    string str = inc.ReadString();
-                    //Console.WriteLine("Response: {0}: {1}", inc.SenderEndPoint.ToString(), name);
-
-                    string[] nameArgs = str.Split(' ');
-
-                    if (nameArgs[0] == "slave")
-                    {
-                        string name = nameArgs[1];
-                        if (slaves.Count(s => s.Connection.RemoteEndPoint == inc.SenderEndPoint && s.Name == name) > 0)
-                        {
-                            Console.WriteLine("Slave already registered: {0}, {1}", inc.SenderEndPoint, name);
-                            break;
-                        }
-
-                        NetConnection connection = server.Connect(inc.SenderEndPoint); 
-
-                        Slave slave = new Slave(connection, name, server);
-                        slaves.Add(slave);
-                        Console.WriteLine("Slave registered: {0}, {1}", inc.SenderEndPoint, name);
-                    }
 
                     break;
 
