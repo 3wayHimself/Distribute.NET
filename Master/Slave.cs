@@ -19,6 +19,7 @@ namespace Master
         public NetConnection Connection;
         public string Name;
         public SlaveStatus Status;
+        public Task RunningTask;
 
         NetServer server;
 
@@ -30,14 +31,22 @@ namespace Master
             this.server = server;
         }
 
-        public void SendProgram(string prgm)
+        public void SendTask(Task task)
         {
             Status = SlaveStatus.Running;
+            RunningTask = task;
+            task.Assignee = this;
 
-            NetOutgoingMessage msg = server.CreateMessage();
-            msg.Write("prgm");
-            msg.Write(prgm);
-            server.SendMessage(msg, Connection, NetDeliveryMethod.ReliableOrdered);
+            NetOutgoingMessage outMsg = server.CreateMessage();
+            outMsg.Write("prgm");
+            outMsg.Write(task.Code);
+            server.SendMessage(outMsg, Connection, NetDeliveryMethod.ReliableOrdered);
+        }
+
+        public void SetIdle()
+        {
+            Status = SlaveStatus.Idle;
+            RunningTask = null;
         }
     }
 }

@@ -14,14 +14,18 @@ namespace Master
     {
         static NetServer server;
         static List<Slave> slaves;
-        static List<string> queue;
+        static List<Task> queue;
+        static List<Task> tasks;
+        //static List<Program> prgms;
 
         public static void Main(string[] args)
         {
             bool running = true;
 
             slaves = new List<Slave>();
-            queue = new List<string>();
+            queue = new List<Task>();
+            tasks = new List<Task>();
+            //prgms = new List<Program>();
 
             Console.WriteLine("Distribute.NET Master - 1.0");
 
@@ -82,23 +86,6 @@ namespace Master
                 if (a.Length < 2)
                     return;
 
-                int index;
-                if (!Int32.TryParse(a[0], out index))
-                    return;
-
-                string prgm = String.Join(" ", a.Skip(1));
-                Console.WriteLine(prgm);
-                NetOutgoingMessage msg = server.CreateMessage();
-                msg.Write("prgm");
-                msg.Write(prgm);
-                server.SendMessage(msg, slaves[index].Connection, NetDeliveryMethod.ReliableOrdered);
-
-            }));
-            Command.Register("pack", new Action<string[]>(a =>
-            {
-                if (a.Length < 2)
-                    return;
-
                 string command = a[0];
 
                 if (command == "create")
@@ -108,18 +95,18 @@ namespace Master
 
                     string packName = a[1];
 
-                    Pack pack = new Pack();
+                    Program pack = new Program();
                     pack.Name = packName;
 
                     foreach (var prgm in a.Skip(2))
                     {
                         if (File.Exists(prgm))
-                            pack.Programs.Add(prgm);
+                            pack.AddTask(File.ReadAllText(prgm));
                     }
 
-                    File.WriteAllText(packName + ".pack", pack.Serialize());
+                    File.WriteAllText(packName + ".prgm", pack.Serialize());
 
-                    Console.WriteLine("Pack created: {0}.pack", packName);
+                    Console.WriteLine("Program created: {0}.prgm", packName);
                 }
                 else if (command == "run")
                 {
@@ -128,12 +115,12 @@ namespace Master
                     if (!File.Exists(packName))
                         return;
 
-                    Pack pack = JsonConvert.DeserializeObject<Pack>(File.ReadAllText(packName));
+                    Program prgm = JsonConvert.DeserializeObject<Program>(File.ReadAllText(packName));
+                    prgm.AfterDeserialize();
 
-                    Console.WriteLine("Running pack: {0}", pack.Name);
+                    Console.WriteLine("Running program: {0}", prgm.Name);
 
-                    queue.AddRange(pack.Programs.Select(p => File.ReadAllText(p)));
-                    CheckQueue();
+                    RunProgram(prgm);
                 }
             }));
             #endregion
@@ -180,10 +167,12 @@ namespace Master
 
                     if (data == "result")
                     {
-                        slaves.Find(s => s.Connection.RemoteEndPoint == inc.SenderEndPoint).Status = SlaveStatus.Idle;
+                        Task task = tasks.Find(t => t.Assignee.Connection == inc.SenderConnection);
+                        task.Assignee.SetIdle();
+                        tasks.Remove(task);
 
                         string result = inc.ReadString();
-                        Console.WriteLine("Result from {0}: {1}", inc.SenderEndPoint, result);
+                        Console.WriteLine("Result for task #{0} in \"{1}\": {2}", task.Index(), task.ParentProgram.Name, result);
 
                         CheckQueue();
                     }
@@ -232,6 +221,13 @@ namespace Master
             server.DiscoverLocalPeers(6969);
         }
 
+        static void RunProgram(Program prgm)
+        {
+            //prgms.Add(prgm);
+            queue.AddRange(prgm.Tasks);
+            CheckQueue();
+        }
+
         static void CheckQueue()
         {
             if (queue.Count < 1)
@@ -243,12 +239,17 @@ namespace Master
             List<Slave> idleSlaves = slaves.Where(s => s.Status == SlaveStatus.Idle).ToList();
             int count = idleSlaves.Count;
             if (count < 1)
+            {
+                Console.WriteLine("No idle slaves left. Queued tasks: {0}", queue.Count);
                 return;
+            }
 
             while (count > 0)
             {
                 Console.WriteLine("Sending program to idle slave: {0} ({1})", idleSlaves[0].Name, idleSlaves[0].Connection.RemoteEndPoint);
-                idleSlaves[0].SendProgram(queue[0]);
+                idleSlaves[0].SendTask(queue[0]);
+                tasks.Add(queue[0]);
+
                 idleSlaves.RemoveAt(0);
                 queue.RemoveAt(0);
 
