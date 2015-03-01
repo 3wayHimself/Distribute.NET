@@ -131,7 +131,7 @@ namespace Slave
 
                     string addit = inc.ReadString();
                     if (!String.IsNullOrEmpty(addit))
-                        Console.WriteLine(addit);
+                        Console.WriteLine("Addit: {0}", addit);
 
                     break;
             }

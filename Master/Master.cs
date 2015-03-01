@@ -186,6 +186,11 @@ namespace Master
 
                 case NetIncomingMessageType.StatusChanged:
                     Console.WriteLine("Status of {0}: {1}", inc.SenderEndPoint.ToString(), ((NetConnectionStatus)inc.ReadByte()).ToString());
+
+                    string addit = inc.ReadString();
+                    if (!String.IsNullOrEmpty(addit))
+                        Console.WriteLine("Addit: {0}", addit);
+
                     break;
 
                 case NetIncomingMessageType.ConnectionApproval:
