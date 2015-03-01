@@ -244,11 +244,16 @@ namespace Master
                 return;
             }
 
-            while (count > 0)
+            while (count > 0 || queue.Count == 0)
             {
-                Console.WriteLine("Sending program to idle slave: {0} ({1})", idleSlaves[0].Name, idleSlaves[0].Connection.RemoteEndPoint);
-                idleSlaves[0].SendTask(queue[0]);
-                tasks.Add(queue[0]);
+                Slave idle = idleSlaves[0];
+                Task task = queue[0];
+
+                Console.WriteLine("Sending task (#{0} in \"{1}\") to idle slave: {2} ({3})", task.Index(), task.ParentProgram.Name,
+                    idle.Name, idle.Connection.RemoteEndPoint);
+
+                idle.SendTask(task);
+                tasks.Add(task);
 
                 idleSlaves.RemoveAt(0);
                 queue.RemoveAt(0);
