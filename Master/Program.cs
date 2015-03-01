@@ -16,7 +16,7 @@ namespace Master
 
         public Program()
         {
-            settings = new JsonSerializerSettings() { TypeNameHandling = TypeNameHandling.All };
+            settings = new JsonSerializerSettings();
 
             Tasks = new List<Task>();
         }

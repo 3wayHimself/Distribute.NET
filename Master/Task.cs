@@ -12,6 +12,7 @@ namespace Master
         [JsonIgnore]
         public Program ParentProgram;
         public string CodePath;
+        [JsonIgnore]
         public Slave Assignee;
 
         public Task(Program parent, string code)
