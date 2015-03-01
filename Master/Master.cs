@@ -244,8 +244,14 @@ namespace Master
                 return;
             }
 
-            while (count > 0 || queue.Count > 0)
+            while (count > 0)
             {
+                if (queue.Count == 0)
+                {
+                    Console.WriteLine("Queue emptied, idle slaves: {0}", count);
+                    break;
+                }
+
                 Slave idle = idleSlaves[0];
                 Task task = queue[0];
 
