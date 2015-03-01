@@ -102,7 +102,7 @@ namespace Master
                     foreach (var prgm in a.Skip(2))
                     {
                         if (File.Exists(prgm))
-                            pack.AddTask(File.ReadAllText(prgm));
+                            pack.AddTask(prgm);
                     }
 
                     File.WriteAllText(packName + ".prgm", pack.Serialize());

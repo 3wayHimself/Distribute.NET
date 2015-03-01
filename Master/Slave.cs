@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net;
 using Lidgren.Network;
+using System.IO;
 
 namespace Master
 {
@@ -39,7 +40,7 @@ namespace Master
 
             NetOutgoingMessage outMsg = server.CreateMessage();
             outMsg.Write("prgm");
-            outMsg.Write(task.Code);
+            outMsg.Write(File.ReadAllText(task.CodePath));
             server.SendMessage(outMsg, Connection, NetDeliveryMethod.ReliableOrdered);
         }
 

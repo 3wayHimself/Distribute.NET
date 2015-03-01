@@ -11,13 +11,13 @@ namespace Master
     {
         [JsonIgnore]
         public Program ParentProgram;
-        public string Code;
+        public string CodePath;
         public Slave Assignee;
 
         public Task(Program parent, string code)
         {
             ParentProgram = parent;
-            Code = code;
+            CodePath = code;
         }
 
         public int Index()
