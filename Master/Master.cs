@@ -161,7 +161,7 @@ namespace Master
                 case NetIncomingMessageType.Data:
                     //Console.WriteLine("Message received");
                     data = inc.ReadString();
-                    Console.WriteLine(data);
+                    //Console.WriteLine(data);
 
                     if (data == "result")
                     {

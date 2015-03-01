@@ -41,7 +41,9 @@ namespace Slave
             client.RegisterReceivedCallback(new SendOrPostCallback(MessageReceived), new SynchronizationContext());
             client.Start();
 
-            Console.WriteLine("Client started");
+            Console.WriteLine("Client started, finding master...");
+
+            client.DiscoverLocalPeers(6969);
 
             Command.Register("close", new Action<string[]>((a) => running = false));
             Command.Register("conns", new Action<string[]>((a) =>
