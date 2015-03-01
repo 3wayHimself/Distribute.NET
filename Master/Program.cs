@@ -21,11 +21,6 @@ namespace Master
             Tasks = new List<Task>();
         }
 
-        public void AddTask(string code)
-        {
-            Tasks.Add(new Task(this, code));
-        }
-
         public string Serialize()
         {
             return JsonConvert.SerializeObject(this, settings);

@@ -15,7 +15,7 @@ namespace Master
         static NetServer server;
         static List<Slave> slaves;
         static List<Task> queue;
-        static List<Task> tasks;
+        static List<Task> runningTasks;
         //static List<Program> prgms;
 
         public static void Main(string[] args)
@@ -24,7 +24,7 @@ namespace Master
 
             slaves = new List<Slave>();
             queue = new List<Task>();
-            tasks = new List<Task>();
+            runningTasks = new List<Task>();
             //prgms = new List<Program>();
 
             Console.WriteLine("Distribute.NET Master - 1.0");
@@ -84,39 +84,55 @@ namespace Master
             }));
             Command.Register("prgm", new Action<string[]>(a =>
             {
-                if (a.Length < 2)
+                if (a.Length < 1)
                     return;
 
                 string command = a[0];
 
                 if (command == "create")
                 {
-                    if (a.Length < 4)
-                        return;
-
-                    string prgmName = a[1];
-
-                    if (File.Exists(prgmName + ".prgm"))
-                    {
-                        Console.WriteLine("A program called \"{0}\" already exists");
-                        return;
-                    }
+                    Console.Write("1. Program name: ");
+                    string name = Console.ReadLine();
 
                     Program prgm = new Program();
-                    prgm.Name = prgmName;
+                    prgm.Name = name;
 
-                    foreach (var task in a.Skip(2))
+                    Console.WriteLine("2. Tasks. \"done\" to finish");
+
+                    string ln;
+                    while ((ln = Console.ReadLine()) != "done")
                     {
-                        if (File.Exists(task))
-                            prgm.AddTask(task);
+                        if (!File.Exists(ln))
+                            continue;
+
+                        if (Path.GetExtension(ln) != ".mnd")
+                            continue;
+
+                        Task task = new Task(prgm, ln);
+
+                        Console.WriteLine("2.5. Required task outputs for {0}. \"done\" to finish.", Path.GetFileNameWithoutExtension(ln));
+
+                        while ((ln = Console.ReadLine()) != "done")
+                        {
+                            int index;
+                            if (!Int32.TryParse(ln, out index))
+                                continue;
+
+                            task.WantedTaskOutputs.Add(index);
+                        }
+
+                        prgm.Tasks.Add(task);
                     }
 
-                    File.WriteAllText(prgmName + ".prgm", prgm.Serialize());
+                    File.WriteAllText(name + ".prgm", prgm.Serialize());
 
-                    Console.WriteLine("Program created: {0}.prgm", prgmName);
+                    Console.WriteLine("Program created as {0}.prgm", prgm.Name);
                 }
                 else if (command == "run")
                 {
+                    if (a.Length < 2)
+                        return;
+
                     string packName = a[1];
 
                     if (!File.Exists(packName))
@@ -171,19 +187,28 @@ namespace Master
 
                     if (data == "result")
                     {
-                        Task task = tasks.Find(t => t.Assignee.Connection == inc.SenderConnection);
+                        Task task = runningTasks.Find(t => t.Assignee.Connection == inc.SenderConnection);
                         task.Assignee.Free();
-                        tasks.Remove(task);
+                        runningTasks.Remove(task);
 
                         string result = inc.ReadString();
-                        
+
                         if (result == "error")
                         {
                             string reason = inc.ReadString();
                             Console.WriteLine("Task #{0} in \"{1}\" failed with reason: {2}", task.Index(), task.ParentProgram.Name, reason);
                         }
                         else
+                        {
                             Console.WriteLine("Result for task #{0} in \"{1}\": {2}", task.Index(), task.ParentProgram.Name, result);
+
+                            Task wantTask = queue.Find(t => t.ParentProgram == task.ParentProgram && t.WantedTaskOutputs.Contains(task.Index()));
+                            if (wantTask != null)
+                            {
+                                Console.WriteLine("Passing result to task #{0}", wantTask.Index());
+                                wantTask.Arguments.Insert(task.Index(), Int32.Parse(result));
+                            }
+                        }
 
                         CheckQueue();
                     }
@@ -272,14 +297,22 @@ namespace Master
                 Slave idle = idleSlaves[0];
                 Task task = queue[0];
 
+                if (!task.CanRun())
+                {
+                    Console.WriteLine("Can't run task #{0} in \"{1}\" yet, skipping", task.Index(), task.ParentProgram.Name);
+                    queue.Remove(task);
+                    queue.Insert(1, task);
+                    continue;
+                }
+
                 Console.WriteLine("Sending task (#{0} in \"{1}\") to idle slave: {2} ({3})", task.Index(), task.ParentProgram.Name,
                     idle.Name, idle.Connection.RemoteEndPoint);
 
                 idle.SendTask(task);
-                tasks.Add(task);
+                runningTasks.Add(task);
 
-                idleSlaves.RemoveAt(0);
-                queue.RemoveAt(0);
+                idleSlaves.Remove(idle);
+                queue.Remove(task);
 
                 count -= 1;
             }

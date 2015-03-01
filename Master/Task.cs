@@ -12,6 +12,7 @@ namespace Master
         [JsonIgnore]
         public Program ParentProgram;
         public string CodePath;
+        public List<int> WantedTaskOutputs;
         [JsonIgnore]
         public List<int> Arguments; // TODO: support more than just int
         [JsonIgnore]
@@ -22,12 +23,21 @@ namespace Master
             ParentProgram = parent;
             CodePath = code;
 
+            WantedTaskOutputs = new List<int>();
             Arguments = new List<int>();
         }
 
         public int Index()
         {
             return ParentProgram.Tasks.IndexOf(this);
+        }
+
+        public bool CanRun()
+        {
+            if (WantedTaskOutputs.Count == 0)
+                return true;
+
+            return Arguments.Count >= WantedTaskOutputs.Count;
         }
     }
 }
