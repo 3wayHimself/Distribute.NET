@@ -41,7 +41,7 @@ namespace Slave
             client.RegisterReceivedCallback(new SendOrPostCallback(MessageReceived), new SynchronizationContext());
             client.Start();
 
-            Console.WriteLine("Server started");
+            Console.WriteLine("Client started");
 
             Command.Register("close", new Action<string[]>((a) => running = false));
             Command.Register("conns", new Action<string[]>((a) =>
