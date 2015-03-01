@@ -168,7 +168,7 @@ namespace Master
                     if (data == "result")
                     {
                         Task task = tasks.Find(t => t.Assignee.Connection == inc.SenderConnection);
-                        task.Assignee.SetIdle();
+                        task.Assignee.Free();
                         tasks.Remove(task);
 
                         string result = inc.ReadString();

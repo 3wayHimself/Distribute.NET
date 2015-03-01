@@ -43,7 +43,7 @@ namespace Master
             server.SendMessage(outMsg, Connection, NetDeliveryMethod.ReliableOrdered);
         }
 
-        public void SetIdle()
+        public void Free()
         {
             Status = SlaveStatus.Idle;
             RunningTask = null;
