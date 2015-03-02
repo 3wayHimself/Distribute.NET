@@ -76,7 +76,7 @@ namespace Slave
         {
             NetPeer peer = (NetPeer)peerObj;
             NetIncomingMessage inc = peer.ReadMessage();
-            NetOutgoingMessage outMsg;
+            NetOutgoingMessage outMsg = client.CreateMessage();
 
             switch (inc.MessageType)
             {
@@ -85,14 +85,17 @@ namespace Slave
                 case NetIncomingMessageType.WarningMessage:
                 case NetIncomingMessageType.ErrorMessage:
                     Console.WriteLine("Lidgren: {0}", inc.ReadString());
-                    break;
+                    return;
 
                 case NetIncomingMessageType.Data:
+
                     //Console.WriteLine("Message received");
                     string command = inc.ReadString();
 
                     if (command == "prgm")
                     {
+                        outMsg.Write("result");
+
                         List<int> args = new List<int>();
                         int argCount = inc.ReadInt32();
 
@@ -100,30 +103,58 @@ namespace Slave
                             args.Add(inc.ReadInt32());
 
                         string prgm = inc.ReadString();
+                        string file = inc.ReadString();
 
                         Console.WriteLine("Program received. Args: ", argCount);
 
-                        MondValue func = mondState.Run(prgm);
-                        if (func.Type != MondValueType.Function)
+                        MondValue func = null;
+                        try
                         {
-                            Console.WriteLine("Invalid return type: {0} ({1})", func.Type, func.Serialize());
+                            func = mondState.Run(prgm, file);
+                        }
+                        catch (MondCompilerException ex)
+                        {
+                            Console.WriteLine("MondCompilerException: {0}", ex.Message);
 
-                            outMsg = client.CreateMessage();
                             outMsg.Write("error");
-                            outMsg.Write("wrong return type; expected function");
-                            client.SendMessage(outMsg, inc.SenderConnection, NetDeliveryMethod.ReliableOrdered);
+                            outMsg.Write(ex.Message);
+                            client.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered);
 
                             break;
                         }
 
-                        string result = mondState.Call(func, args.Select(a => new MondValue(a)).ToArray());
+                        if (func.Type != MondValueType.Function)
+                        {
+                            Console.WriteLine("Invalid return type: {0} ({1})", func.Type, func.Serialize());
+
+                            outMsg.Write("error");
+                            outMsg.Write("wrong return type; expected function");
+                            client.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered);
+
+                            break;
+                        }
+
+                        string result;
+                        try
+                        {
+                            result = mondState.Call(func, args.Select(a => new MondValue(a)).ToArray());
+                        }
+                        catch (MondRuntimeException ex)
+                        {
+                            Console.WriteLine("MondRuntimeException: {0}", ex.Message);
+
+                            outMsg.Write("error");
+                            outMsg.Write(ex.Message);
+                            client.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered);
+
+                            break;
+                        }
 
                         Console.WriteLine("Done. Result: {0}", result);
 
-                        outMsg = client.CreateMessage();
-                        outMsg.Write("result");
                         outMsg.Write(result);
-                        client.SendMessage(outMsg, inc.SenderConnection, NetDeliveryMethod.ReliableOrdered);
+
+                        client.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered);
                     }
 
                     break;
@@ -144,7 +175,7 @@ namespace Slave
                     {
                         Console.WriteLine("Found master at {0}", inc.SenderEndPoint);
 
-                        outMsg = client.CreateMessage("slave");
+                        outMsg.Write("slave");
                         outMsg.Write(name);
                         client.Connect(inc.SenderEndPoint, outMsg);
                     }

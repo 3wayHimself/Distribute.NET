@@ -50,6 +50,7 @@ namespace Master
             }
 
             outMsg.Write(File.ReadAllText(task.CodePath));
+            outMsg.Write(task.CodePath);
             server.SendMessage(outMsg, Connection, NetDeliveryMethod.ReliableOrdered);
         }
 
