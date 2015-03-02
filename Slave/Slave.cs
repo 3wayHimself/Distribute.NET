@@ -119,12 +119,15 @@ namespace Slave
                         int argCount = inc.ReadInt32();
 
                         if (argCount > 0)
-                            args.Add(inc.ReadInt32());
+                        {
+                            for (var i = 0; i < argCount; i++)
+                                args.Add(inc.ReadInt32());
+                        }
 
                         string prgm = inc.ReadString();
                         string file = inc.ReadString();
 
-                        Console.WriteLine("Program received. Args: ", argCount);
+                        Console.WriteLine("Program received. Args: {0}", argCount);
 
                         MondValue func = null;
                         try
