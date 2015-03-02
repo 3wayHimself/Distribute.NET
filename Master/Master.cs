@@ -206,7 +206,7 @@ namespace Master
                             if (wantTask != null)
                             {
                                 Console.WriteLine("Passing result to task #{0}", wantTask.Index());
-                                wantTask.Arguments.Insert(task.Index(), Int32.Parse(result));
+                                wantTask.Arguments.Add(task.Index(), Int32.Parse(result));
                             }
                         }
 

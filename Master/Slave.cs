@@ -45,7 +45,7 @@ namespace Master
 
             if (task.Arguments.Count > 0)
             {
-                foreach (var arg in task.Arguments)
+                foreach (var arg in task.Arguments.OrderBy(k => k.Key).Select(k => k.Value))
                     outMsg.Write(arg);
             }
 
