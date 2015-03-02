@@ -196,16 +196,16 @@ namespace Master
                         if (result == "error")
                         {
                             string reason = inc.ReadString();
-                            Console.WriteLine("Task #{0} in \"{1}\" failed with reason: {2}", task.Index(), task.ParentProgram.Name, reason);
+                            Console.WriteLine("{0}: Task #{1} in \"{2}\" failed with reason: {3}", task.Assignee.Name, task.Index(), task.ParentProgram.Name, reason);
                         }
                         else
                         {
-                            Console.WriteLine("Result for task #{0} in \"{1}\": {2}", task.Index(), task.ParentProgram.Name, result);
+                            Console.WriteLine("{0}: Result for task #{1} in \"{2}\": {3}", task.Assignee.Name, task.Index(), task.ParentProgram.Name, result);
 
                             Task wantTask = queue.Find(t => t.ParentProgram == task.ParentProgram && t.WantedTaskOutputs.Contains(task.Index()));
                             if (wantTask != null)
                             {
-                                Console.WriteLine("Passing result to task #{0}", wantTask.Index());
+                                Console.WriteLine("Passing result to task #{0} in \"{1}\"", wantTask.Index(), task.ParentProgram.Name);
                                 wantTask.Arguments.Add(task.Index(), Int32.Parse(result));
                             }
                         }
