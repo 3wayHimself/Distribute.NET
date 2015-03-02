@@ -30,6 +30,25 @@ namespace Slave
             name = File.ReadAllText("slavename.txt");
 
             mondState = new MondState();
+            mondState["assert"] = new MondFunction((_, a) =>
+            {
+                if (a[0] == MondValue.False)
+                {
+                    string error = "Assertion failed";
+                    if (a.Length > 1)
+                    {
+                        if (a[1] != MondValue.Null)
+                            error = a[1].Serialize();
+                    }
+
+                    throw new MondRuntimeException(error);
+                }
+                return MondValue.Null;
+            });
+            mondState["error"] = new MondFunction((_, a) =>
+            {
+                throw new MondRuntimeException(a.Length > 0 ? a[0].Serialize() : "");
+            });
 
             Console.WriteLine("Distribute.NET Slave - 1.0: {0}", name);
 
@@ -115,6 +134,8 @@ namespace Slave
                         catch (MondCompilerException ex)
                         {
                             Console.WriteLine("MondCompilerException: {0}", ex.Message);
+                            if (ex.InnerException != null)
+                                Console.WriteLine("Inner ({0}): {1}", ex.GetType().Name, ex.InnerException.Message);
 
                             outMsg.Write("error");
                             outMsg.Write(ex.Message);
@@ -142,6 +163,8 @@ namespace Slave
                         catch (MondRuntimeException ex)
                         {
                             Console.WriteLine("MondRuntimeException: {0}", ex.Message);
+                            if (ex.InnerException != null)
+                                Console.WriteLine("Inner ({0}): {1}", ex.GetType().Name, ex.InnerException.Message);
 
                             outMsg.Write("error");
                             outMsg.Write(ex.Message);
