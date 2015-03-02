@@ -45,10 +45,6 @@ namespace Slave
                 }
                 return MondValue.Null;
             });
-            mondState["error"] = new MondFunction((_, a) =>
-            {
-                throw new MondRuntimeException(a.Length > 0 ? a[0].Serialize() : "");
-            });
 
             Console.WriteLine("Distribute.NET Slave - 1.0: {0}", name);
 
