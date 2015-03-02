@@ -27,7 +27,7 @@ namespace Slave
                 return;
             }
 
-            name = File.ReadAllText("slavename.txt");
+            name = File.ReadAllText("slavename.txt").Trim();
 
             mondState = new MondState();
             mondState["assert"] = new MondFunction((_, a) =>
