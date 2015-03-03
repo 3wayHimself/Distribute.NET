@@ -192,6 +192,7 @@ namespace Master
                         runningTasks.Remove(task);
 
                         string result = inc.ReadString();
+                        string type = inc.ReadString();
 
                         if (result == "error")
                         {
@@ -206,7 +207,15 @@ namespace Master
                             if (wantTask != null)
                             {
                                 Console.WriteLine("Passing result to task #{0} in \"{1}\"", wantTask.Index(), task.ParentProgram.Name);
-                                wantTask.Arguments.Add(task.Index(), Int32.Parse(result));
+
+                                if (type == "number")
+                                    wantTask.Arguments.Add(task.Index(), new Value<int>(Int32.Parse(result)));
+                                else if (type == "string")
+                                    wantTask.Arguments.Add(task.Index(), new Value<string>(result));
+                                else if (type == "bool")
+                                    wantTask.Arguments.Add(task.Index(), new Value<bool>(Boolean.Parse(result)));
+                                else
+                                    Console.WriteLine("Invalid result type: {0} ({1})", type, result);
                             }
                         }
 

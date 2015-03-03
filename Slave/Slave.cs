@@ -111,13 +111,35 @@ namespace Slave
                     {
                         outMsg.Write("result");
 
-                        List<int> args = new List<int>();
+                        List<MondValue> args = new List<MondValue>();
                         int argCount = inc.ReadInt32();
 
                         if (argCount > 0)
                         {
                             for (var i = 0; i < argCount; i++)
-                                args.Add(inc.ReadInt32());
+                            {
+                                string argType = inc.ReadString();
+                                Console.WriteLine(argType);
+
+                                switch (argType)
+                                {
+                                    case "Int32":
+                                        args.Add(new MondValue(inc.ReadInt32()));
+                                        break;
+
+                                    case "String":
+                                        args.Add(new MondValue(inc.ReadString()));
+                                        break;
+
+                                    case "Boolean":
+                                        args.Add(new MondValue(inc.ReadBoolean() ? 1 : 0));
+                                        break;
+
+                                    default:
+                                        Console.WriteLine("Invalid argument type: {0}", argType);
+                                        break;
+                                }
+                            }
                         }
 
                         string prgm = inc.ReadString();
@@ -155,9 +177,13 @@ namespace Slave
                         }
 
                         string result;
+                        string type;
                         try
                         {
-                            result = mondState.Call(func, args.Select(a => new MondValue(a)).ToArray());
+                            MondValue res = mondState.Call(func, args.ToArray());
+                            result = res.Serialize();
+                            type = res.Type.GetName();
+                            //Console.WriteLine(type);
                         }
                         catch (MondRuntimeException ex)
                         {
@@ -175,6 +201,7 @@ namespace Slave
                         Console.WriteLine("Done. Result: {0}", result);
 
                         outMsg.Write(result);
+                        outMsg.Write(type);
 
                         client.SendMessage(outMsg, NetDeliveryMethod.ReliableOrdered);
                     }

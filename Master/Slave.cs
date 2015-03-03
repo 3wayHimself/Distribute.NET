@@ -46,7 +46,19 @@ namespace Master
             if (task.Arguments.Count > 0)
             {
                 foreach (var arg in task.Arguments.OrderBy(k => k.Key).Select(k => k.Value))
-                    outMsg.Write(arg);
+                {
+                    object value = arg.GetValue();
+                    Type type = arg.GetValueType();
+
+                    outMsg.Write(type.Name);
+
+                    if (type == typeof(int))
+                        outMsg.Write((int)value);
+                    else if (type == typeof(string))
+                        outMsg.Write((string)value);
+                    else if (type == typeof(bool))
+                        outMsg.Write((bool)value);
+                }
             }
 
             outMsg.Write(File.ReadAllText(task.CodePath));

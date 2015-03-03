@@ -14,7 +14,7 @@ namespace Master
         public string CodePath;
         public List<int> WantedTaskOutputs;
         [JsonIgnore]
-        public Dictionary<int, int> Arguments; // TODO: support more than just int
+        public Dictionary<int, IValue> Arguments;
         [JsonIgnore]
         public Slave Assignee;
 
@@ -24,7 +24,7 @@ namespace Master
             CodePath = code;
 
             WantedTaskOutputs = new List<int>();
-            Arguments = new Dictionary<int, int>();
+            Arguments = new Dictionary<int, IValue>();
         }
 
         public int Index()
